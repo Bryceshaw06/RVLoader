@@ -55,10 +55,10 @@ void gprintf (const char *format, ...) {
     va_list va;
     va_start(va, format);
 
-    if ((vasprintf(&tmp, format, va) >= 0) && tmp) {
+    /*if ((vasprintf(&tmp, format, va) >= 0) && tmp) {
         usb_sendbuffer(EXI_CHANNEL_1, tmp, strlen(tmp));
     }
-    va_end(va);
+    va_end(va);*/
 
     if(tmp)
         free(tmp);

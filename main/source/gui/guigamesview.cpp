@@ -73,7 +73,7 @@ void GuiGamesView::initLUA() {
     static const luaL_Reg GuiGamesView_functions[] = {
         {"setCoverSize", lua_setCoverSize},
         {"drawGameCover", lua_drawGameCover},
-        {"drawGameSaveIcon", lua_drawGameSaveIcon},
+        //{"drawGameSaveIcon", lua_drawGameSaveIcon},
         {"getGamesCount", lua_getGamesCount},
         {"getGameName", lua_getGameName},
         {"getGamesType", lua_getGamesType},
@@ -504,7 +504,7 @@ int GuiGamesView::lua_drawGameCover(lua_State* L) {
 
     return 0;
 }
-
+/*
 int GuiGamesView::lua_drawGameSaveIcon(lua_State* L) {
     int argc = lua_gettop(L);
     if (argc != 2 && argc != 3) {
@@ -572,7 +572,7 @@ int GuiGamesView::lua_drawGameSaveIcon(lua_State* L) {
 
     return 0;
 }
-
+*/
 int GuiGamesView::lua_getGamesCount(lua_State* L) {
     int argc = lua_gettop(L);
     if (argc != 0) {
