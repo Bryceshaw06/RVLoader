@@ -10,6 +10,7 @@
 #include "gcplus.h"
 #include "main.h"
 #include "hex.h"
+#include "system.h"
 
 #define EEPROM_PACKET_SIZE 4
 #define EEPROM_RETRIES  10
@@ -600,27 +601,41 @@ namespace GCPlus {
         LWP_MutexLock(GCPMutex);
 
         IntelHex hex(updatePath.c_str());
-        if (!hex.binary)
+        if (!hex.binary) {
+            systemError("GC+ updateThread", "Could not read hex file");
             goto fail;
+        }
 
-        if (!GCPlus::unlock())
+        if (!GCPlus::unlock()) {
+            systemError("GC+ updateThread", "Could not unlock main firmware");
             goto fail;
+        }
 
-        if (!GCPlus::bootBootloader())
+        if (!GCPlus::bootBootloader()) {
+            systemError("GC+ updateThread", "Could not launch bootloader");
             goto fail;
+        }
+
         usleep(100000);
 
-        if (!GCPlus::unlock())
+        if (!GCPlus::unlock()) {
+            systemError("GC+ updateThread", "Could not unlock bootloader");
             goto fail;
+        }
 
         //Read update file size
-        if (!flashPayload(hex.binary, hex.binarySize))
+        if (!flashPayload(hex.binary, hex.binarySize)) {
+            systemError("GC+ updateThread", "Could not flash hex");
             goto fail;
+        }
 
         usleep(1000000);
 
-        if (!GCPlus::bootPayload())
+        if (!GCPlus::bootPayload()) {
+            systemError("GC+ updateThread", "Could not launch payload");
             goto fail;
+        }
+
         usleep(1000000);
 
         GCPlus::lock();
