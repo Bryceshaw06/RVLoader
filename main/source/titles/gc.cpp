@@ -1,28 +1,7 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <malloc.h>
-#include <ctype.h>
-#include <gccore.h>
-#include <ogc/lwp_watchdog.h>
-#include <dirent.h>
-#include <unistd.h>
-#include <limits.h>
-#include <vector>
-#include <unordered_set>
-#include <algorithm>
-#include <stdexcept>
-#include <filesystem>
-#include "titles.h"
-#include "rvlmutex.h"
-#include "utils.h"
-
-#include <iostream>
 #include <fstream>
-
+#include "titles.h"
+#include "utils.h"
 #include "gcsave.h"
-
-#define THREAD_STACK_SIZE 16384
 
 #define GC_MAGIC    0xC2339F3D
 #define CISO_MAGIC  0x4349534F

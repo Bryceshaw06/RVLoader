@@ -1,16 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <malloc.h>
-#include <ctype.h>
-#include <gccore.h>
-#include <ogc/lwp_watchdog.h>
-#include <dirent.h>
-#include <unistd.h>
-#include <limits.h>
-#include <vector>
-#include <algorithm>
-#include <stdexcept>
 #include <fstream>
 #include "titles.h"
 #include "utils.h"
