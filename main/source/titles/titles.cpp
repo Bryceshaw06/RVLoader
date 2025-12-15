@@ -116,6 +116,11 @@ void GamesDatabase::scanGames() {
     std::vector<GameContainer> newGames;
     std::vector<std::string> verifiedPaths;
 
+    //Return if the scan path does not exist or is not a directory
+    if (!std::filesystem::exists(scanPath) || !std::filesystem::is_directory(scanPath)) {
+        return;
+    }
+
     //Build lookup table.
     //The block scope ensures the lock is released after the lookup table is built.
     {
