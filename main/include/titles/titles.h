@@ -156,14 +156,26 @@ class GamesDatabaseGC : public GamesDatabase {
         void addMetadataToGameContainer(GameContainer& gc) override;
 };
 
-extern GamesDatabaseGC gcGamesDatabase;
+class GamesDatabaseWii : public GamesDatabase {
+    public:
+        GamesDatabaseWii() {
+            scanPath = "/wbfs";
+            cachePath = "/rvloader/wii_game_cache.tsv";
+            targetNameOrExtension = ".wbfs";
+            recursiveScan = true;
+            scanningForDirectories = false;
+        }
+        GameContainer createGameContainer(time_t lastModified, const std::string& path) override;
+        void addMetadataToGameContainer(GameContainer& gc) override;
+};
 
-extern std::vector<GameContainer> wiiGames;
+extern GamesDatabaseGC gcGamesDatabase;
+extern GamesDatabaseWii wiiGamesDatabase;
+
 extern std::vector<GameContainer> vcGames;
 extern std::vector<GameContainer> wiiChannels;
 extern std::vector<HBContainer> wiiHomebrews;
 
-extern mutex_t wiiCoversMutex;
 extern mutex_t vcCoversMutex;
 extern mutex_t wiiChanCoversMutex;
 
