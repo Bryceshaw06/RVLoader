@@ -31,40 +31,40 @@ GamesDatabaseGC gcGamesDatabase;
 
 GameContainer GamesDatabaseGC::createGameContainer(time_t lastModified, const std::string& path) {
     u32 magic;
-    std::string gameId(7, '\0');
-    u32 gameIdU32;
+    std::string gameIDString(7, '\0');
+    u32 gameID;
     std::string gameName(0x41, '\0');
     std::string coverPath;
     std::string configPath;
 
-    GameContainer ret;
+    GameContainer retGameContainer;
     
     std::ifstream ifs(path, std::ios::binary);
 
     if (!ifs.is_open())
-        return ret;
+        return retGameContainer;
 
     ifs.seekg(0x1C, std::ios::beg);
     ifs.read(reinterpret_cast<char*>(&magic), sizeof(u32));
     if (magic == GC_MAGIC) {
         ifs.seekg(0x0, std::ios::beg);
-        ifs.read(reinterpret_cast<char*>(&gameIdU32), sizeof(u32));
+        ifs.read(reinterpret_cast<char*>(&gameID), sizeof(u32));
         ifs.seekg(0x0, std::ios::beg);
-        ifs.read(gameId.data(), 6);
-        gameId.resize(ifs.gcount());
+        ifs.read(gameIDString.data(), 6);
+        gameIDString.resize(ifs.gcount());
     } else if (magic == CISO_MAGIC) {
         ifs.seekg(0x8000, std::ios::beg);
-        ifs.read(reinterpret_cast<char*>(&gameIdU32), sizeof(u32));
+        ifs.read(reinterpret_cast<char*>(&gameID), sizeof(u32));
         ifs.seekg(0x8000, std::ios::beg);
-        ifs.read(gameId.data(), 6);
-        gameId.resize(ifs.gcount());
+        ifs.read(gameIDString.data(), 6);
+        gameIDString.resize(ifs.gcount());
     } else {
         ifs.close();
-        return ret;
+        return retGameContainer;
     }
 
     try {
-        gameName = wiiTDB::getGameName(gameId);
+        gameName = wiiTDB::getGameName(gameIDString);
     } catch (std::out_of_range& e) {
         if (magic == GC_MAGIC) {
             ifs.seekg(0x20, std::ios::beg);
@@ -79,8 +79,8 @@ GameContainer GamesDatabaseGC::createGameContainer(time_t lastModified, const st
 
     ifs.close();
 
-    configPath = std::string(CONFIG_PATH) + "/" + gameId + ".cfg";
-    coverPath = std::string(COVER_PATH) + "/" + gameId + ".png";
+    configPath = std::string(CONFIG_PATH) + "/" + gameIDString + ".cfg";
+    coverPath = std::string(COVER_PATH) + "/" + gameIDString + ".png";
 
     if (!fileExists(coverPath)) { //Check if gameID cover exists
         coverPath = DUMMY_COVER_PATH;
@@ -89,13 +89,16 @@ GameContainer GamesDatabaseGC::createGameContainer(time_t lastModified, const st
         }
     }
 
-    /*std::string savePath;
-    gameId[4] = '\0';
-    savePath = "/saves/" + std::string(gameId) + ".raw";*/
-    //GCSave save(savePath);
-    GCSave save;
+    retGameContainer = GameContainer(lastModified, gameName, path, coverPath, configPath, gameIDString, gameID);
+    addMetadataToGameContainer(retGameContainer);
+    return retGameContainer;
+}
 
-    return GameContainer(lastModified, gameName, path, coverPath, configPath, "", gameId, gameIdU32, save);
+void GamesDatabaseGC::addMetadataToGameContainer(GameContainer& gc) {
+    std::string savePath;
+    savePath = "/saves/" + gc.gameIDString.substr(0, 4) + ".raw";
+    GCSave save(savePath);
+    gc.save = save;
 }
 
 void addGCGames() {

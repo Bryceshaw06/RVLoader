@@ -32,7 +32,8 @@ class GameContainer {
         GCSave save;
 
         GameContainer() {}
-        GameContainer(time_t _lastModified, std::string _name, std::string _path, std::string _coverPath, std::string _confPath, std::string _cheatPath, std::string _gameIDString, u32 _gameID, GCSave _save) : lastModified(_lastModified), name(_name), path(_path), coverPath(_coverPath), confPath(_confPath), cheatPath(_cheatPath), gameIDString(_gameIDString), gameID(_gameID), image(NULL), save(_save) {}
+        GameContainer(time_t _lastModified, std::string _name, std::string _path, std::string _coverPath, std::string _confPath, std::string _gameIDString, u32 _gameID):
+            lastModified(_lastModified), name(_name), path(_path), coverPath(_coverPath), confPath(_confPath), gameIDString(_gameIDString), gameID(_gameID), image(NULL) {}
 
         static bool compare(GameContainer gc1, GameContainer gc2) {
             const char* buffer1 = gc1.name.c_str();
@@ -112,9 +113,7 @@ class GamesDatabase {
             scanningForDirectories = false;
             
             scanAndUpdateThreadStack = NULL;
-            scanAndUpdateThreadHandle = NULL;
             coversThreadStack = NULL;
-            coversThreadHandle = NULL;
         }
         GamesDatabase(std::string _scanPath, std::string _cachePath, std::string _targetNameOrExtension, bool _recursiveScan = false, bool _scanningForDirectories = false) {
             scanPath = _scanPath;
@@ -124,9 +123,7 @@ class GamesDatabase {
             scanningForDirectories = _scanningForDirectories;
 
             scanAndUpdateThreadStack = NULL;
-            scanAndUpdateThreadHandle = NULL;
             coversThreadStack = NULL;
-            coversThreadHandle = NULL;
         }
 
         void lock() { dbMutex.lock(); }
@@ -143,6 +140,7 @@ class GamesDatabase {
         static void* loadCoversThread(void* arg);
         bool hasFinishedScanningGames() { return hasFinishedScanning.check(); }
         virtual GameContainer createGameContainer(time_t lastModified, const std::string& path) { return GameContainer(); }
+        virtual void addMetadataToGameContainer(GameContainer& gc) { }
 };
 
 class GamesDatabaseGC : public GamesDatabase {
@@ -155,6 +153,7 @@ class GamesDatabaseGC : public GamesDatabase {
             scanningForDirectories = true;
         }
         GameContainer createGameContainer(time_t lastModified, const std::string& path) override;
+        void addMetadataToGameContainer(GameContainer& gc) override;
 };
 
 extern GamesDatabaseGC gcGamesDatabase;
@@ -170,7 +169,7 @@ extern mutex_t wiiChanCoversMutex;
 
 namespace wiiTDB {
     void parse();
-    std::string getGameName(std::string gameId);
+    std::string getGameName(std::string gameID);
 }
 
 void addWiiGames();

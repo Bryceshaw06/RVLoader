@@ -71,16 +71,16 @@ bool GamesDatabase::readCache() {
 
         //Parse
         std::stringstream ss(line);
-        std::string id, name, path, coverPath, lastModifiedStr;
+        std::string gameIDString, name, path, coverPath, lastModifiedStr;
 
         //Check if we can successfully read all 3 columns
-        if (std::getline(ss, id, '\t') &&
+        if (std::getline(ss, gameIDString, '\t') &&
             std::getline(ss, name, '\t') &&
             std::getline(ss, path, '\t') &&
             std::getline(ss, coverPath, '\t') &&
             std::getline(ss, lastModifiedStr, '\t')) {
-            u32 gameIdU32 = *(u32*)id.c_str();
-            std::string configPath = std::string(CONFIG_PATH) + "/" + id + ".cfg";
+            u32 gameID = *(u32*)gameIDString.c_str();
+            std::string configPath = std::string(CONFIG_PATH) + "/" + gameIDString + ".cfg";
             if (!fileExists(coverPath)) {
                 if (dummyExists) {
                     coverPath = DUMMY_COVER_PATH;
@@ -88,9 +88,9 @@ bool GamesDatabase::readCache() {
                     coverPath = "";
                 }
             }
-            
-            GCSave save;
-            games.push_back(GameContainer(std::stoll(lastModifiedStr), name, path, coverPath, configPath, "", id, gameIdU32, save));
+            GameContainer container(std::stoll(lastModifiedStr), name, path, coverPath, configPath, gameIDString, gameID);
+            addMetadataToGameContainer(container);
+            games.push_back(container);
         }
     }
 
