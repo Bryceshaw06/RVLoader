@@ -216,3 +216,17 @@ void* GamesDatabase::loadCoversThread(void* arg) {
     db->writeCache();
     return NULL;
 }
+
+void lockTitlesDBs() {
+    gcGamesDatabase.lock();
+    wiiGamesDatabase.lock();
+    vcGamesDatabase.lock();
+    wiiChannelsDatabase.lock();
+}
+
+void unlockTitlesDBs() {
+    gcGamesDatabase.unlock();
+    wiiGamesDatabase.unlock();
+    vcGamesDatabase.unlock();
+    wiiChannelsDatabase.unlock();
+}

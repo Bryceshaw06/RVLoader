@@ -216,6 +216,8 @@ namespace wiiTDB {
     std::string getGameName(std::string gameID);
 }
 
+void lockTitlesDBs();
+void unlockTitlesDBs();
 void addWiiGames();
 void addGCGames();
 void addVCGames();
