@@ -452,6 +452,7 @@ int GuiGamesView::lua_drawGameCover(lua_State* L) {
     //Get games list
     lua_getglobal(L, "_gamesDatabase");
     GamesDatabase* gamesDatabase = (GamesDatabase*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
     lua_getglobal(L, "_gamesList");
     std::vector<GameContainer>* gamesList = (std::vector<GameContainer>*)lua_touserdata(L, -1);
     lua_pop(L, 1);
