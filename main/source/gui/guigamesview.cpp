@@ -59,7 +59,7 @@ void GuiGamesView::initLUA() {
             lua_pushlightuserdata(L, &vcGamesDatabase.games);
         break;
     }
-    lua_setglobal(L, "_gamesList");
+    lua_setfield(L, LUA_REGISTRYINDEX, "gamesList");
     switch (titlesType) {
         case GC_GAME:
             lua_pushlightuserdata(L, &gcGamesDatabase);
@@ -77,13 +77,13 @@ void GuiGamesView::initLUA() {
             lua_pushlightuserdata(L, &vcGamesDatabase);
         break;
     }
-    lua_setglobal(L, "_gamesDatabase");
+    lua_setfield(L, LUA_REGISTRYINDEX, "gamesDatabase");
     lua_pushlightuserdata(L, &coverWidth);
-    lua_setglobal(L, "_coverWidth");
+    lua_setfield(L, LUA_REGISTRYINDEX, "coverWidth");
     lua_pushlightuserdata(L, &coverHeight);
-    lua_setglobal(L, "_coverHeight");
+    lua_setfield(L, LUA_REGISTRYINDEX, "coverHeight");
     lua_pushlightuserdata(L, this);
-    lua_setglobal(L, "_this");
+    lua_setfield(L, LUA_REGISTRYINDEX, "this");
 
     //Register custom libraries
     luaRegisterCustomLibs(L);
@@ -201,7 +201,7 @@ void GuiGamesView::initLUA() {
 
 void GuiGamesView::openGameConfig(u32 idx) {
     int tempVal;
-    lua_getglobal(L, "_gamesList");
+    lua_getfield(L, LUA_REGISTRYINDEX, "gamesList");
     std::vector<GameContainer>* gamesList = (std::vector<GameContainer>*)lua_touserdata(L, -1);
     lua_pop(L, 1);
     GameContainer& gc = gamesList->at(idx);
@@ -351,7 +351,7 @@ void GuiGamesView::openGameGC2WiimoteConfig(u32 idx) {
     u32 magic;
     u32 version;
 
-    lua_getglobal(L, "_gamesList");
+    lua_getfield(L, LUA_REGISTRYINDEX, "gamesList");
     std::vector<GameContainer>* gamesList = (std::vector<GameContainer>*)lua_touserdata(L, -1);
     lua_pop(L, 1);
     GameContainer& gc = gamesList->at(idx);
@@ -406,13 +406,13 @@ int GuiGamesView::lua_setCoverSize(lua_State* L) {
     int h = luaL_checkinteger(L, 2);
 
     //Get games list and cover dimensions
-    lua_getglobal(L, "_gamesList");
+    lua_getfield(L, LUA_REGISTRYINDEX, "gamesList");
     std::vector<GameContainer>* gamesList = (std::vector<GameContainer>*)lua_touserdata(L, -1);
     lua_pop(L, 1);
-    lua_getglobal(L, "_coverWidth");
+    lua_getfield(L, LUA_REGISTRYINDEX, "coverWidth");
     int* coverWidth = (int*)lua_touserdata(L, -1);
     lua_pop(L, 1);
-    lua_getglobal(L, "_coverHeight");
+    lua_getfield(L, LUA_REGISTRYINDEX, "coverHeight");
     int* coverHeight = (int*)lua_touserdata(L, -1);
     lua_pop(L, 1);
 
@@ -440,24 +440,23 @@ int GuiGamesView::lua_drawGameCover(lua_State* L) {
     u32 idx = luaL_checkinteger(L, 3);
     //printf("x: %d, y: %d, idx: %d\n", x, y, idx);
 
-    lua_getglobal(L, "_coverWidth");
+    //Get cover dimensions
+    lua_getfield(L, LUA_REGISTRYINDEX, "coverWidth");
     int* coverWidth = (int*)lua_touserdata(L, -1);
     lua_pop(L, 1);
-    lua_getglobal(L, "_coverHeight");
+    lua_getfield(L, LUA_REGISTRYINDEX, "coverHeight");
     int* coverHeight = (int*)lua_touserdata(L, -1);
     lua_pop(L, 1);
 
-    //printf("coverWidth: %d, coverHeight: %d\n", *coverWidth, *coverHeight);
-
     //Get games list
-    lua_getglobal(L, "_gamesDatabase");
+    lua_getfield(L, LUA_REGISTRYINDEX, "gamesDatabase");
     GamesDatabase* gamesDatabase = (GamesDatabase*)lua_touserdata(L, -1);
     lua_pop(L, 1);
-    lua_getglobal(L, "_gamesList");
+    lua_getfield(L, LUA_REGISTRYINDEX, "gamesList");
     std::vector<GameContainer>* gamesList = (std::vector<GameContainer>*)lua_touserdata(L, -1);
     lua_pop(L, 1);
 
-    lua_getglobal(L, "_this");
+    lua_getfield(L, LUA_REGISTRYINDEX, "this");
     GuiGamesView* thisView = (GuiGamesView*)lua_touserdata(L, -1);
     lua_pop(L, 1);
 
@@ -509,19 +508,20 @@ int GuiGamesView::lua_drawGameSaveIcon(lua_State* L) {
     //Game index is always the last argument
     u32 idx = luaL_checkinteger(L, argc);
 
-    lua_getglobal(L, "_coverWidth");
+    //Get cover dimensions
+    lua_getfield(L, LUA_REGISTRYINDEX, "coverWidth");
     int* coverWidth = (int*)lua_touserdata(L, -1);
     lua_pop(L, 1);
-    lua_getglobal(L, "_coverHeight");
+    lua_getfield(L, LUA_REGISTRYINDEX, "coverHeight");
     int* coverHeight = (int*)lua_touserdata(L, -1);
     lua_pop(L, 1);
 
     //Get games list
-    lua_getglobal(L, "_gamesList");
+    lua_getfield(L, LUA_REGISTRYINDEX, "gamesList");
     std::vector<GameContainer>* gamesList = (std::vector<GameContainer>*)lua_touserdata(L, -1);
     lua_pop(L, 1);
 
-    lua_getglobal(L, "_this");
+    lua_getfield(L, LUA_REGISTRYINDEX, "this");
     GuiGamesView* thisView = (GuiGamesView*)lua_touserdata(L, -1);
     lua_pop(L, 1);
 
@@ -575,7 +575,7 @@ int GuiGamesView::lua_hasFinishedScanningGames(lua_State* L) {
     }
 
     //Get games list
-    lua_getglobal(L, "_gamesDatabase");
+    lua_getfield(L, LUA_REGISTRYINDEX, "gamesDatabase");
     GamesDatabase* gamesDatabase = (GamesDatabase*)lua_touserdata(L, -1);
     lua_pop(L, 1);
     lua_pushboolean(L, gamesDatabase->hasFinishedScanningGames());
@@ -590,7 +590,7 @@ int GuiGamesView::lua_getGamesCount(lua_State* L) {
     }
 
     //Get games list
-    lua_getglobal(L, "_gamesList");
+    lua_getfield(L, LUA_REGISTRYINDEX, "gamesList");
     std::vector<GameContainer>* gamesList = (std::vector<GameContainer>*)lua_touserdata(L, -1);
     lua_pop(L, 1);
     lua_pushinteger(L, gamesList->size());
@@ -605,7 +605,7 @@ int GuiGamesView::lua_getGameName(lua_State* L) {
     }
 
     //Get games list
-    lua_getglobal(L, "_gamesList");
+    lua_getfield(L, LUA_REGISTRYINDEX, "gamesList");
     std::vector<GameContainer>* gamesList = (std::vector<GameContainer>*)lua_touserdata(L, -1);
     lua_pop(L, 1);
 
@@ -627,7 +627,7 @@ int GuiGamesView::lua_getGamesType(lua_State* L) {
         return luaL_error(L, "wrong number of arguments");
     }
 
-    lua_getglobal(L, "_this");
+    lua_getfield(L, LUA_REGISTRYINDEX, "this");
     GuiGamesView* thisView = (GuiGamesView*)lua_touserdata(L, -1);
     lua_pop(L, 1);
 
@@ -645,10 +645,10 @@ int GuiGamesView::lua_bootGame(lua_State* L) {
     }
 
     //Get games list
-    lua_getglobal(L, "_gamesList");
+    lua_getfield(L, LUA_REGISTRYINDEX, "gamesList");
     std::vector<GameContainer>* gamesList = (std::vector<GameContainer>*)lua_touserdata(L, -1);
     lua_pop(L, 1);
-    lua_getglobal(L, "_this");
+    lua_getfield(L, LUA_REGISTRYINDEX, "this");
     GuiGamesView* thisView = (GuiGamesView*)lua_touserdata(L, -1);
     lua_pop(L, 1);
 
@@ -973,7 +973,7 @@ int GuiGamesView::lua_openGameConfig(lua_State* L) {
         return luaL_error(L, "wrong number of arguments");
     }
 
-    lua_getglobal(L, "_this");
+    lua_getfield(L, LUA_REGISTRYINDEX, "this");
     GuiGamesView* thisView = (GuiGamesView*)lua_touserdata(L, -1);
     lua_pop(L, 1);
 
@@ -995,7 +995,7 @@ int GuiGamesView::lua_saveGameConfig(lua_State* L) {
         return luaL_error(L, "wrong number of arguments");
     }
 
-    lua_getglobal(L, "_this");
+    lua_getfield(L, LUA_REGISTRYINDEX, "this");
     GuiGamesView* thisView = (GuiGamesView*)lua_touserdata(L, -1);
     lua_pop(L, 1);
 
@@ -1012,7 +1012,7 @@ int GuiGamesView::lua_setGameConfigValue(lua_State* L) {
         return luaL_error(L, "wrong number of arguments");
     }
 
-    lua_getglobal(L, "_this");
+    lua_getfield(L, LUA_REGISTRYINDEX, "this");
     GuiGamesView* thisView = (GuiGamesView*)lua_touserdata(L, -1);
     lua_pop(L, 1);
 
@@ -1029,7 +1029,7 @@ int GuiGamesView::lua_getGameConfigValue(lua_State* L) {
 
     int val = 0;
 
-    lua_getglobal(L, "_this");
+    lua_getfield(L, LUA_REGISTRYINDEX, "this");
     GuiGamesView* thisView = (GuiGamesView*)lua_touserdata(L, -1);
     lua_pop(L, 1);
 
@@ -1046,10 +1046,10 @@ int GuiGamesView::lua_readGameCheats(lua_State* L) {
         return luaL_error(L, "wrong number of arguments");
     }
 
-    lua_getglobal(L, "_this");
+    lua_getfield(L, LUA_REGISTRYINDEX, "this");
     GuiGamesView* thisView = (GuiGamesView*)lua_touserdata(L, -1);
     lua_pop(L, 1);
-    lua_getglobal(L, "_gamesList");
+    lua_getfield(L, LUA_REGISTRYINDEX, "gamesList");
     std::vector<GameContainer>* gamesList = (std::vector<GameContainer>*)lua_touserdata(L, -1);
     lua_pop(L, 1);
 
@@ -1093,7 +1093,7 @@ int GuiGamesView::lua_openGC2WiimoteGameConfig(lua_State* L) {
         return luaL_error(L, "wrong number of arguments");
     }
 
-    lua_getglobal(L, "_this");
+    lua_getfield(L, LUA_REGISTRYINDEX, "this");
     GuiGamesView* thisView = (GuiGamesView*)lua_touserdata(L, -1);
     lua_pop(L, 1);
 
@@ -1115,7 +1115,7 @@ int GuiGamesView::lua_saveGC2WiimoteGameConfig(lua_State* L) {
         return luaL_error(L, "wrong number of arguments");
     }
 
-    lua_getglobal(L, "_this");
+    lua_getfield(L, LUA_REGISTRYINDEX, "this");
     GuiGamesView* thisView = (GuiGamesView*)lua_touserdata(L, -1);
     lua_pop(L, 1);
 
@@ -1137,7 +1137,7 @@ int GuiGamesView::lua_setGC2WiimoteGameConfigValue(lua_State* L) {
         return luaL_error(L, "wrong number of arguments");
     }
 
-    lua_getglobal(L, "_this");
+    lua_getfield(L, LUA_REGISTRYINDEX, "this");
     GuiGamesView* thisView = (GuiGamesView*)lua_touserdata(L, -1);
     lua_pop(L, 1);
 
@@ -1159,7 +1159,7 @@ int GuiGamesView::lua_getGC2WiimoteGameConfigValue(lua_State* L) {
         return luaL_error(L, "wrong number of arguments");
     }
 
-    lua_getglobal(L, "_this");
+    lua_getfield(L, LUA_REGISTRYINDEX, "this");
     GuiGamesView* thisView = (GuiGamesView*)lua_touserdata(L, -1);
     lua_pop(L, 1);
 
@@ -1181,7 +1181,7 @@ int GuiGamesView::lua_setGC2WiimoteGameConfigModifier(lua_State* L) {
         return luaL_error(L, "wrong number of arguments");
     }
 
-    lua_getglobal(L, "_this");
+    lua_getfield(L, LUA_REGISTRYINDEX, "this");
     GuiGamesView* thisView = (GuiGamesView*)lua_touserdata(L, -1);
     lua_pop(L, 1);
 
@@ -1203,7 +1203,7 @@ int GuiGamesView::lua_getGC2WiimoteGameConfigModifier(lua_State* L) {
         return luaL_error(L, "wrong number of arguments");
     }
 
-    lua_getglobal(L, "_this");
+    lua_getfield(L, LUA_REGISTRYINDEX, "this");
     GuiGamesView* thisView = (GuiGamesView*)lua_touserdata(L, -1);
     lua_pop(L, 1);
 
@@ -1225,7 +1225,7 @@ int GuiGamesView::lua_setGC2WiimoteGameConfigNegModifier(lua_State* L) {
         return luaL_error(L, "wrong number of arguments");
     }
 
-    lua_getglobal(L, "_this");
+    lua_getfield(L, LUA_REGISTRYINDEX, "this");
     GuiGamesView* thisView = (GuiGamesView*)lua_touserdata(L, -1);
     lua_pop(L, 1);
 
@@ -1247,7 +1247,7 @@ int GuiGamesView::lua_getGC2WiimoteGameConfigNegModifier(lua_State* L) {
         return luaL_error(L, "wrong number of arguments");
     }
 
-    lua_getglobal(L, "_this");
+    lua_getfield(L, LUA_REGISTRYINDEX, "this");
     GuiGamesView* thisView = (GuiGamesView*)lua_touserdata(L, -1);
     lua_pop(L, 1);
 
@@ -1269,7 +1269,7 @@ int GuiGamesView::lua_getGC2WiimoteMapString(lua_State* L) {
         return luaL_error(L, "wrong number of arguments");
     }
 
-    lua_getglobal(L, "_this");
+    lua_getfield(L, LUA_REGISTRYINDEX, "this");
     GuiGamesView* thisView = (GuiGamesView*)lua_touserdata(L, -1);
     lua_pop(L, 1);
 
@@ -1448,7 +1448,7 @@ int GuiGamesView::lua_openGCPMapGameConfig(lua_State* L) {
         return luaL_error(L, "wrong number of arguments");
     }
 
-    lua_getglobal(L, "_this");
+    lua_getfield(L, LUA_REGISTRYINDEX, "this");
     GuiGamesView* thisView = (GuiGamesView*)lua_touserdata(L, -1);
     lua_pop(L, 1);
 
@@ -1474,7 +1474,7 @@ int GuiGamesView::lua_saveGCPMapGameConfig(lua_State* L) {
         return luaL_error(L, "wrong number of arguments");
     }
 
-    lua_getglobal(L, "_this");
+    lua_getfield(L, LUA_REGISTRYINDEX, "this");
     GuiGamesView* thisView = (GuiGamesView*)lua_touserdata(L, -1);
     lua_pop(L, 1);
 
@@ -1500,7 +1500,7 @@ int GuiGamesView::lua_setGCPMapGameConfigValue(lua_State* L) {
         return luaL_error(L, "wrong number of arguments");
     }
 
-    lua_getglobal(L, "_this");
+    lua_getfield(L, LUA_REGISTRYINDEX, "this");
     GuiGamesView* thisView = (GuiGamesView*)lua_touserdata(L, -1);
     lua_pop(L, 1);
 
@@ -1533,7 +1533,7 @@ int GuiGamesView::lua_getGCPMapGameConfigValue(lua_State* L) {
         return luaL_error(L, "wrong number of arguments");
     }
 
-    lua_getglobal(L, "_this");
+    lua_getfield(L, LUA_REGISTRYINDEX, "this");
     GuiGamesView* thisView = (GuiGamesView*)lua_touserdata(L, -1);
     lua_pop(L, 1);
 
@@ -1559,7 +1559,7 @@ int GuiGamesView::lua_getGCPMapString(lua_State* L) {
         return luaL_error(L, "wrong number of arguments");
     }
 
-    lua_getglobal(L, "_this");
+    lua_getfield(L, LUA_REGISTRYINDEX, "this");
     GuiGamesView* thisView = (GuiGamesView*)lua_touserdata(L, -1);
     lua_pop(L, 1);
 
