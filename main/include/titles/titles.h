@@ -169,15 +169,47 @@ class GamesDatabaseWii : public GamesDatabase {
         void addMetadataToGameContainer(GameContainer& gc) override;
 };
 
+class GamesDatabaseWAD : public GamesDatabase {
+    public:
+        GamesDatabaseWAD() {
+            scanPath = "";
+            cachePath = "";
+            targetNameOrExtension = ".wad";
+            recursiveScan = false;
+            scanningForDirectories = false;
+        }
+        GameContainer createGameContainer(time_t lastModified, const std::string& path) override;
+        void addMetadataToGameContainer(GameContainer& gc) override;
+};
+
+class GamesDatabaseVC : public GamesDatabaseWAD {
+    public:
+        GamesDatabaseVC() {
+            scanPath = "/vc";
+            cachePath = "/rvloader/vc_game_cache.tsv";
+            targetNameOrExtension = ".wad";
+            recursiveScan = false;
+            scanningForDirectories = false;
+        }
+};
+
+class GamesDatabaseChannels : public GamesDatabaseWAD {
+    public:
+        GamesDatabaseChannels() {
+            scanPath = "/channels";
+            cachePath = "/rvloader/channels_game_cache.tsv";
+            targetNameOrExtension = ".wad";
+            recursiveScan = false;
+            scanningForDirectories = false;
+        }
+};
+
 extern GamesDatabaseGC gcGamesDatabase;
 extern GamesDatabaseWii wiiGamesDatabase;
+extern GamesDatabaseVC vcGamesDatabase;
+extern GamesDatabaseChannels wiiChannelsDatabase;
 
-extern std::vector<GameContainer> vcGames;
-extern std::vector<GameContainer> wiiChannels;
 extern std::vector<HBContainer> wiiHomebrews;
-
-extern mutex_t vcCoversMutex;
-extern mutex_t wiiChanCoversMutex;
 
 namespace wiiTDB {
     void parse();

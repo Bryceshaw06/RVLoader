@@ -70,12 +70,12 @@ GCSave::GCSave(std::string filename, u32 gameCodeMatch) {
         break;
     }
 
-    printf("firstBlockOffset: %u\n", dirEntry.firstBlockOffset);
-    printf("gfxDataOffset: %u\n", dirEntry.gfxDataOffset);
-    printf("bannerFormat: %02X\n", dirEntry.bannerFormat);
-    printf("iconFormat: %04X\n", dirEntry.iconFormat);
-    printf("iconAnimationSpeed: %04X\n", dirEntry.iconAnimationSpeed);
-    printf("iconOffset: %04X\n", iconOffset);
+    // printf("firstBlockOffset: %u\n", dirEntry.firstBlockOffset);
+    // printf("gfxDataOffset: %u\n", dirEntry.gfxDataOffset);
+    // printf("bannerFormat: %02X\n", dirEntry.bannerFormat);
+    // printf("iconFormat: %04X\n", dirEntry.iconFormat);
+    // printf("iconAnimationSpeed: %04X\n", dirEntry.iconAnimationSpeed);
+    // printf("iconOffset: %04X\n", iconOffset);
 
     u16 tempIconFormat = dirEntry.iconFormat;
     u16 tempIconSpeed = dirEntry.iconAnimationSpeed;

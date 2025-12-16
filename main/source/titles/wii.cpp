@@ -1,3 +1,4 @@
+#include <gccore.h>
 #include <fstream>
 #include "titles.h"
 #include "utils.h"

@@ -40,25 +40,44 @@ void GuiGamesView::initLUA() {
     L = luaL_newstate();
     luaL_openlibs(L);
 
+
     //Link some members to global LUA variables
     switch (titlesType) {
         case GC_GAME:
-            lua_pushlightuserdata(L, &gcGames);
+            lua_pushlightuserdata(L, &gcGamesDatabase.games);
         break;
 
         case WII_GAME:
-            lua_pushlightuserdata(L, &wiiGames);
+            lua_pushlightuserdata(L, &wiiGamesDatabase.games);
         break;
 
         case WII_CHANNEL:
-            lua_pushlightuserdata(L, &wiiChannels);
+            lua_pushlightuserdata(L, &wiiChannelsDatabase.games);
         break;
 
         case WII_VC:
-            lua_pushlightuserdata(L, &vcGames);
+            lua_pushlightuserdata(L, &vcGamesDatabase.games);
         break;
     }
     lua_setglobal(L, "_gamesList");
+    switch (titlesType) {
+        case GC_GAME:
+            lua_pushlightuserdata(L, &gcGamesDatabase);
+        break;
+
+        case WII_GAME:
+            lua_pushlightuserdata(L, &wiiGamesDatabase);
+        break;
+
+        case WII_CHANNEL:
+            lua_pushlightuserdata(L, &wiiChannelsDatabase);
+        break;
+
+        case WII_VC:
+            lua_pushlightuserdata(L, &vcGamesDatabase);
+        break;
+    }
+    lua_setglobal(L, "_gamesDatabase");
     lua_pushlightuserdata(L, &coverWidth);
     lua_setglobal(L, "_coverWidth");
     lua_pushlightuserdata(L, &coverHeight);
@@ -74,6 +93,7 @@ void GuiGamesView::initLUA() {
         {"setCoverSize", lua_setCoverSize},
         {"drawGameCover", lua_drawGameCover},
         {"drawGameSaveIcon", lua_drawGameSaveIcon},
+        {"hasFinishedScanningGames", lua_hasFinishedScanningGames},
         {"getGamesCount", lua_getGamesCount},
         {"getGameName", lua_getGameName},
         {"getGamesType", lua_getGamesType},
@@ -418,6 +438,7 @@ int GuiGamesView::lua_drawGameCover(lua_State* L) {
     int x = luaL_checkinteger(L, 1);
     int y = luaL_checkinteger(L, 2);
     u32 idx = luaL_checkinteger(L, 3);
+    //printf("x: %d, y: %d, idx: %d\n", x, y, idx);
 
     lua_getglobal(L, "_coverWidth");
     int* coverWidth = (int*)lua_touserdata(L, -1);
@@ -426,7 +447,11 @@ int GuiGamesView::lua_drawGameCover(lua_State* L) {
     int* coverHeight = (int*)lua_touserdata(L, -1);
     lua_pop(L, 1);
 
+    //printf("coverWidth: %d, coverHeight: %d\n", *coverWidth, *coverHeight);
+
     //Get games list
+    lua_getglobal(L, "_gamesDatabase");
+    GamesDatabase* gamesDatabase = (GamesDatabase*)lua_touserdata(L, -1);
     lua_getglobal(L, "_gamesList");
     std::vector<GameContainer>* gamesList = (std::vector<GameContainer>*)lua_touserdata(L, -1);
     lua_pop(L, 1);
@@ -443,59 +468,28 @@ int GuiGamesView::lua_drawGameCover(lua_State* L) {
         Gfx::translate(x, y);
         Gfx::getCurMatrix(tempMtx);
 
-        switch (thisView->titlesType) {
-            case GC_GAME:
-                LWP_MutexLock(gcCoversMutex);
-            break;
-
-            case WII_GAME:
-                LWP_MutexLock(wiiCoversMutex);
-            break;
-
-            case WII_CHANNEL:
-                LWP_MutexLock(wiiChanCoversMutex);
-            break;
-
-            case WII_VC:
-                LWP_MutexLock(vcCoversMutex);
-            break;
-        }
+        gamesDatabase->lockCovers();
 
         //Load the cover if it's inside the screen view
         if ((tempMtx[0][3] >= -*coverWidth) && (tempMtx[0][3] < getScreenSize().x + *coverWidth)
             && (tempMtx[1][3] >= -*coverHeight) && (tempMtx[1][3] < getScreenSize().y + *coverHeight)) {
             if (gc.image == NULL) {
-                if (gc.coverPath.size() > 0)
+                if (gc.coverPath.size() > 0) {
                     gc.image = new GuiImage(gc.coverPath.c_str());
-                else
-                    gc.image = dummyCover;
-                gc.image->setSize(*coverWidth, *coverHeight);
+                    gc.image->setSize(*coverWidth, *coverHeight);
+                } else {
+                    gc.image = NULL;
+                }
             }
         } else {
-            if (gc.image != NULL && gc.image != dummyCover)
+            if (gc.image != NULL)
                 delete gc.image;
             gc.image = NULL;
         }
         if (gc.image != NULL)
             gc.image->draw(false);
 
-        switch (thisView->titlesType) {
-            case GC_GAME:
-                LWP_MutexUnlock(gcCoversMutex);
-            break;
-
-            case WII_GAME:
-                LWP_MutexUnlock(wiiCoversMutex);
-            break;
-
-            case WII_CHANNEL:
-                LWP_MutexUnlock(wiiChanCoversMutex);
-            break;
-
-            case WII_VC:
-                LWP_MutexUnlock(vcCoversMutex);
-            break;
-        }
+        gamesDatabase->unlockCovers();
 
         Gfx::popMatrix();
     } catch (std::out_of_range& e) {
@@ -573,6 +567,21 @@ int GuiGamesView::lua_drawGameSaveIcon(lua_State* L) {
     return 0;
 }
 
+int GuiGamesView::lua_hasFinishedScanningGames(lua_State* L) {
+    int argc = lua_gettop(L);
+    if (argc != 0) {
+        return luaL_error(L, "wrong number of arguments");
+    }
+
+    //Get games list
+    lua_getglobal(L, "_gamesDatabase");
+    GamesDatabase* gamesDatabase = (GamesDatabase*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+    lua_pushboolean(L, gamesDatabase->hasFinishedScanningGames());
+
+    return 1;
+}
+
 int GuiGamesView::lua_getGamesCount(lua_State* L) {
     int argc = lua_gettop(L);
     if (argc != 0) {
@@ -647,7 +656,6 @@ int GuiGamesView::lua_bootGame(lua_State* L) {
         forceReinstall = lua_toboolean(L, 2);
     }
 
-    printf("lua_bootGame\n");
 
     //Return result
     try {
