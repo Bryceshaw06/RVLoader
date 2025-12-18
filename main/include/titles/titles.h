@@ -100,7 +100,6 @@ class GamesDatabase {
         u8* coversThreadStack;
         lwp_t coversThreadHandle;
         RVLMutex dbMutex;
-        RVLMutex coversMutex;
         RVLTrigger hasFinishedScanning;
         void handleDirEntryForScan(const std::filesystem::directory_entry& dir_entry, std::unordered_map<std::string, GameContainer*>& lookup, std::vector<GameContainer>& newGames, std::vector<std::string>& verifiedPaths);
     public:
@@ -128,9 +127,6 @@ class GamesDatabase {
 
         void lock() { dbMutex.lock(); }
         void unlock() { dbMutex.unlock(); }
-
-        void lockCovers() { coversMutex.lock(); }
-        void unlockCovers() { coversMutex.unlock(); }
         
         bool readCache();
         bool writeCache();

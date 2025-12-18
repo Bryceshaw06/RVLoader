@@ -468,8 +468,6 @@ int GuiGamesView::lua_drawGameCover(lua_State* L) {
         Gfx::translate(x, y);
         Gfx::getCurMatrix(tempMtx);
 
-        gamesDatabase->lockCovers();
-
         //Load the cover if it's inside the screen view
         if ((tempMtx[0][3] >= -*coverWidth) && (tempMtx[0][3] < getScreenSize().x + *coverWidth)
             && (tempMtx[1][3] >= -*coverHeight) && (tempMtx[1][3] < getScreenSize().y + *coverHeight)) {
@@ -488,8 +486,6 @@ int GuiGamesView::lua_drawGameCover(lua_State* L) {
         }
         if (gc.image != NULL)
             gc.image->draw(false);
-
-        gamesDatabase->unlockCovers();
 
         Gfx::popMatrix();
     } catch (std::out_of_range& e) {

@@ -160,6 +160,8 @@ void GamesDatabase::scanGames() {
     games.insert(games.end(), newGames.begin(), newGames.end());
 
     std::sort(games.begin(), games.end(), GameContainer::compare);
+
+    writeCache();
 }
 
 void GamesDatabase::startScanAndUpdateThread() {
@@ -171,7 +173,6 @@ void GamesDatabase::startScanAndUpdateThread() {
 void* GamesDatabase::scanAndUpdateThread(void* arg) {
     GamesDatabase* db = (GamesDatabase*)arg;
     db->scanGames();
-    db->writeCache();
     db->coversThreadStack = (u8*)memalign(32, THREAD_STACK_SIZE);
     LWP_CreateThread(&db->coversThreadHandle, loadCoversThread, (void*)db, db->coversThreadStack, THREAD_STACK_SIZE, 30);
     db->hasFinishedScanning.send();
@@ -181,39 +182,64 @@ void* GamesDatabase::scanAndUpdateThread(void* arg) {
 void* GamesDatabase::loadCoversThread(void* arg) {
     static const char gamesRegions[] = {'E', 'P', 'J'};
     GamesDatabase* db = (GamesDatabase*)arg;
+    std::unordered_map<GameContainer*, std::string> coverMap;
     std::string tempID;
     std::string tempPath;
 
-    for (auto& game : db->games) {
-        tempID = game.gameIDString;
+    bool dummyExists = fileExists(DUMMY_COVER_PATH);
+
+    //Make a copy of the cover paths for each game
+    {
+        std::lock_guard<RVLMutex> lock(db->dbMutex);
+        for (auto& game : db->games) {
+            coverMap[&game] = game.gameIDString;
+        }
+    }
+
+    //Check for covers
+    for (auto& cover : coverMap) {
+        tempID = cover.second;
         tempPath = std::string(COVER_PATH) + "/" + tempID + ".png";
         if (!fileExists(tempPath)) {
             //Try looking for a cover of the same game from a different region
             bool coverFound = false;
             for (u32 i = 0; i < sizeof(gamesRegions) && !coverFound; i++) {
+                if (cover.second[3] == gamesRegions[i]) {
+                    continue;
+                }
                 tempID[3] = gamesRegions[i];
                 tempPath = std::string(COVER_PATH) + "/" + tempID + ".png";
                 if (fileExists(tempPath)) {
                     coverFound = true;
                 }
             }
-            if (!coverFound) {
-                tempPath = DUMMY_COVER_PATH;
-            }
-            if (!fileExists(tempPath)) {
-                tempPath = "";
+            if (coverFound) {
+                cover.second = tempID;
+            } else {
+                cover.second = "";
             }
         }
-        db->lockCovers();
-        game.coverPath = tempPath;
-        if (game.image != NULL) {
-            delete game.image;
-            game.image = NULL; //This will force a reload of the cover.
-        }
-        db->unlockCovers();
-        usleep(100);
     }
-    db->writeCache();
+
+    //Update the cover paths
+    {
+        std::lock_guard<RVLMutex> lock(db->dbMutex);
+        for (auto& cover : coverMap) {
+            GameContainer* game = cover.first;
+            if (cover.second == "" && dummyExists) {
+                game->coverPath  = DUMMY_COVER_PATH;
+            } else if (cover.second != "") {
+                game->coverPath  = std::string(COVER_PATH) + "/" + cover.second + ".png";
+            } else {
+                game->coverPath  = "";
+            }
+            if (game->image != NULL) {
+                delete game->image;
+                game->image = NULL; //This will force a reload of the cover.
+            }
+        }
+        db->writeCache();
+    }
     return NULL;
 }
 
