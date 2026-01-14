@@ -4,20 +4,18 @@
 #include "systitles.h"
 #include "utils.h"
 
-GameContainer GamesDatabaseWAD::createGameContainer(time_t lastModified, const std::string& path) {
+void GamesDatabaseWAD::createGameContainer(std::vector<GameContainer>& newGames, time_t lastModified, const std::string& path) {
     std::string gameIDString;
     u32 gameID;
     std::string gameName(0x41, '\0');
     std::string coverPath;
     std::string configPath;
-
-    GameContainer retGameContainer;
     
     std::ifstream ifs(path, std::ios::binary);
 
     if (!ifs.is_open()) {
         printf("Failed to open wad file %s\n", path.c_str());
-        return retGameContainer;
+        return;
     }
 
     //Read gameID from WAD
@@ -30,7 +28,7 @@ GameContainer GamesDatabaseWAD::createGameContainer(time_t lastModified, const s
         (wad.header.type != 0x49730000 && wad.header.type != 0x69620000 && wad.header.type != 0x426b0000)) {
             printf("WAD type does not match. Expected 0x49730000, 0x69620000 or 0x426b0000, got 0x%08X\n", wad.header.type);
         ifs.close();
-        return retGameContainer;
+        return;
     }
 
     //Jump to titleIDOffset offset
@@ -65,9 +63,8 @@ GameContainer GamesDatabaseWAD::createGameContainer(time_t lastModified, const s
         }
     }
 
-    retGameContainer = GameContainer(lastModified, gameName, path, coverPath, configPath, gameIDString, gameID);
-    addMetadataToGameContainer(retGameContainer);
-    return retGameContainer;
+    newGames.emplace_back(lastModified, gameName, path, coverPath, configPath, gameIDString, gameID);
+    addMetadataToGameContainer(newGames.back());
 }
 
 void GamesDatabaseWAD::addMetadataToGameContainer(GameContainer& gc) {

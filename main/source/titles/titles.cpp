@@ -1,3 +1,4 @@
+#include <gccore.h>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -10,6 +11,7 @@
 #include "rvlmutex.h"
 #include "utils.h"
 #include "titles.h"
+#include "threadsprofiler.h"
 
 #define THREAD_STACK_SIZE 16384
 
@@ -42,8 +44,7 @@ void GamesDatabase::handleDirEntryForScan(const std::filesystem::directory_entry
         verifiedPaths.push_back(current_path);
     } else {
         // New file found! Read ID/Title from disk
-        GameContainer new_entry = createGameContainer(fileLastModified, current_path); 
-        newGames.push_back(new_entry);
+        createGameContainer(newGames, fileLastModified, current_path); 
     }
 }
 
@@ -53,12 +54,22 @@ void GamesDatabase::handleDirEntryForScan(const std::filesystem::directory_entry
 bool GamesDatabase::readCache() {
     std::ifstream file(cachePath);
     if (!file.is_open()) return false;
+    printf("%s: Reading cache\n", dbName.c_str());
+    auto fileSize = std::filesystem::file_size(cachePath);
+    std::string content(fileSize, '\0');
+    file.read(&content[0], fileSize);
+    file.close();
+    printf("%s: Read cache\n", dbName.c_str());
+
+    std::istringstream stream(content);
+    printf("%s: Stream created\n", dbName.c_str());
 
     bool dummyExists = fileExists(DUMMY_COVER_PATH);
+    printf("%s: Dummy exists: %s\n", dbName.c_str(), dummyExists ? "true" : "false");
     
     std::string line;
 
-    while (std::getline(file, line)) {
+    while (std::getline(stream, line)) {
         //Remove \r if found
         if (!line.empty() && line.back() == '\r') {
             line.pop_back();
@@ -88,11 +99,11 @@ bool GamesDatabase::readCache() {
                     coverPath = "";
                 }
             }
-            GameContainer container(std::stoll(lastModifiedStr), name, path, coverPath, configPath, gameIDString, gameID);
-            addMetadataToGameContainer(container);
-            games.push_back(container);
+            games.emplace_back(std::stoll(lastModifiedStr), name, path, coverPath, configPath, gameIDString, gameID);
+            addMetadataToGameContainer(games.back());
         }
     }
+    printf("%s: Read cache done\n", dbName.c_str());
 
     return true;
 }
@@ -123,6 +134,7 @@ void GamesDatabase::scanGames() {
 
     //Build lookup table.
     //The block scope ensures the lock is released after the lookup table is built.
+    printf("%s: Building lookup table\n", dbName.c_str());
     {
         std::lock_guard<RVLMutex> lock(dbMutex);
         for (auto& game : games) {
@@ -130,6 +142,7 @@ void GamesDatabase::scanGames() {
         }
     }
 
+    printf("%s: Scanning games\n", dbName.c_str());
     if (recursiveScan) {
         for (const auto& dir_entry : std::filesystem::recursive_directory_iterator(scanPath)) {
             handleDirEntryForScan(dir_entry, lookup, newGames, verifiedPaths);
@@ -139,27 +152,39 @@ void GamesDatabase::scanGames() {
             handleDirEntryForScan(dir_entry, lookup, newGames, verifiedPaths);
         }
     }
+    printf("%s: Scanned games\n", dbName.c_str());
     
-
     //Locks the database to update it
     std::lock_guard<RVLMutex> lock(dbMutex);
     
     // 1. Remove deleted games (in entries but not in verifiedPaths)
     // Convert verifiedPaths to a set for fast lookup during deletion checks
+    printf("%s: Removing deleted games\n", dbName.c_str());
+    printf("%s: Verified paths count: %u\n", dbName.c_str(), verifiedPaths.size());
     std::unordered_set<std::string> verifiedSet(verifiedPaths.begin(), verifiedPaths.end());
     
+    printf("%s: remove_if\n", dbName.c_str());
     // Remove_if moves "to keep" items to front, returns iterator to "garbage"
     auto new_end = std::remove_if(games.begin(), games.end(),
         [&](const GameContainer& e) {
             // If path is NOT in verified set, delete it
             return verifiedSet.find(e.path) == verifiedSet.end();
         });
+    printf("%s: remove_if finished\n", dbName.c_str());
+    printf("%s: Erasing %u games\n", dbName.c_str(), games.size() - (new_end - games.begin()));
+    printf("%s: Games size: %u\n", dbName.c_str(), games.size());
     games.erase(new_end, games.end());
+    printf("%s: Games size: %u\n", dbName.c_str(), games.size());
+    printf("%s: erase finished\n", dbName.c_str());
 
     // 2. Add new games
     games.insert(games.end(), newGames.begin(), newGames.end());
 
+    printf("%s: Beginning sorting\n", dbName.c_str());
+    u64 startTime = gettime();
+    u32 startMem = SYS_GetArena2Size();
     std::sort(games.begin(), games.end(), GameContainer::compare);
+    printf("%s: Sorting finished in %u ms. Lost %.3f MB\n", dbName.c_str(), diff_msec(startTime, gettime()), (float)(startMem - SYS_GetArena2Size()) / 1048576.0f);
 
     writeCache();
 }
@@ -167,14 +192,14 @@ void GamesDatabase::scanGames() {
 void GamesDatabase::startScanAndUpdateThread() {
     readCache();
     scanAndUpdateThreadStack = (u8*)memalign(32, THREAD_STACK_SIZE);
-    LWP_CreateThread(&scanAndUpdateThreadHandle, scanAndUpdateThread, (void*)this, scanAndUpdateThreadStack, THREAD_STACK_SIZE, 30);
+    ThreadsProfiler::createThreadAndProfile(dbName + " ScanAndUpdateThread", &scanAndUpdateThreadHandle, scanAndUpdateThread, (void*)this, scanAndUpdateThreadStack, THREAD_STACK_SIZE, 30);
 }
 
 void* GamesDatabase::scanAndUpdateThread(void* arg) {
     GamesDatabase* db = (GamesDatabase*)arg;
     db->scanGames();
     db->coversThreadStack = (u8*)memalign(32, THREAD_STACK_SIZE);
-    LWP_CreateThread(&db->coversThreadHandle, loadCoversThread, (void*)db, db->coversThreadStack, THREAD_STACK_SIZE, 30);
+    ThreadsProfiler::createThreadAndProfile(db->dbName + " CoversThread", &db->coversThreadHandle, loadCoversThread, (void*)db, db->coversThreadStack, THREAD_STACK_SIZE, 30);
     db->hasFinishedScanning.send();
     return NULL;
 }
@@ -240,6 +265,7 @@ void* GamesDatabase::loadCoversThread(void* arg) {
         }
         db->writeCache();
     }
+
     return NULL;
 }
 

@@ -5,25 +5,23 @@
 
 GamesDatabaseWii wiiGamesDatabase;
 
-GameContainer GamesDatabaseWii::createGameContainer(time_t lastModified, const std::string& path) {
+void GamesDatabaseWii::createGameContainer(std::vector<GameContainer>& newGames, time_t lastModified, const std::string& path) {
     u32 magic;
     std::string gameIDString(7, '\0');
     u32 gameID;
     std::string gameName(0x41, '\0');
     std::string coverPath;
     std::string configPath;
-
-    GameContainer retGameContainer;
     
     std::ifstream ifs(path, std::ios::binary);
 
     if (!ifs.is_open())
-        return retGameContainer;
+        return;
 
     ifs.read(reinterpret_cast<char*>(&magic), sizeof(u32));
     if (magic != WBFS_MAGIC) {
         ifs.close();
-        return retGameContainer;
+        return;
     }
     
     ifs.seekg(0x200, std::ios::beg);
@@ -52,9 +50,8 @@ GameContainer GamesDatabaseWii::createGameContainer(time_t lastModified, const s
         }
     }
 
-    retGameContainer = GameContainer(lastModified, gameName, path, coverPath, configPath, gameIDString, gameID);
-    addMetadataToGameContainer(retGameContainer);
-    return retGameContainer;
+    newGames.emplace_back(lastModified, gameName, path, coverPath, configPath, gameIDString, gameID);
+    addMetadataToGameContainer(newGames.back());
 }
 
 void GamesDatabaseWii::addMetadataToGameContainer(GameContainer& gc) {
