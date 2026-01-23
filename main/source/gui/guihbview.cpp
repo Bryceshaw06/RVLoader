@@ -31,6 +31,9 @@ void GuiHBView::initLUA() {
     L = luaL_newstate();
     luaL_openlibs(L);
 
+    lua_pushstring(L, basePath);
+    lua_setfield(L, LUA_REGISTRYINDEX, "basePath");
+
     //Link some members to global LUA variables
     lua_pushlightuserdata(L, &wiiHomebrews);
     lua_setfield(L, LUA_REGISTRYINDEX, "hbList");

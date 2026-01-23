@@ -35,7 +35,7 @@ class GameContainer {
         GameContainer(time_t _lastModified, std::string _name, std::string _path, std::string _coverPath, std::string _confPath, std::string _gameIDString, u32 _gameID):
             lastModified(_lastModified), name(_name), path(_path), coverPath(_coverPath), confPath(_confPath), gameIDString(_gameIDString), gameID(_gameID), image(NULL) {}
 
-        static bool compare(GameContainer gc1, GameContainer gc2) {
+        static bool compare(const GameContainer& gc1, const GameContainer& gc2) {
             const char* buffer1 = gc1.name.c_str();
             const char* buffer2 = gc2.name.c_str();
 
@@ -90,6 +90,7 @@ class HBContainer {
 
 class GamesDatabase {
     protected:
+        std::string dbName;
         std::string scanPath;
         std::string cachePath;
         std::string targetNameOrExtension;
@@ -105,6 +106,7 @@ class GamesDatabase {
     public:
         std::vector<GameContainer> games;
         GamesDatabase() {
+            dbName = "";
             scanPath = "";
             cachePath = "";
             targetNameOrExtension = "";
@@ -113,6 +115,7 @@ class GamesDatabase {
             
             scanAndUpdateThreadStack = NULL;
             coversThreadStack = NULL;
+            games.reserve(10000);
         }
         GamesDatabase(std::string _scanPath, std::string _cachePath, std::string _targetNameOrExtension, bool _recursiveScan = false, bool _scanningForDirectories = false) {
             scanPath = _scanPath;
@@ -135,52 +138,56 @@ class GamesDatabase {
         static void* scanAndUpdateThread(void* arg);
         static void* loadCoversThread(void* arg);
         bool hasFinishedScanningGames() { return hasFinishedScanning.check(); }
-        virtual GameContainer createGameContainer(time_t lastModified, const std::string& path) { return GameContainer(); }
+        virtual void createGameContainer(std::vector<GameContainer>& newGames, time_t lastModified, const std::string& path) { }
         virtual void addMetadataToGameContainer(GameContainer& gc) { }
 };
 
 class GamesDatabaseGC : public GamesDatabase {
     public:
         GamesDatabaseGC() {
+            dbName = "GC";
             scanPath = "/games";
             cachePath = "/rvloader/gc_game_cache.tsv";
             targetNameOrExtension = "game.iso";
             recursiveScan = false;
             scanningForDirectories = true;
         }
-        GameContainer createGameContainer(time_t lastModified, const std::string& path) override;
+        void createGameContainer(std::vector<GameContainer>& newGames, time_t lastModified, const std::string& path) override;
         void addMetadataToGameContainer(GameContainer& gc) override;
 };
 
 class GamesDatabaseWii : public GamesDatabase {
     public:
         GamesDatabaseWii() {
+            dbName = "Wii";
             scanPath = "/wbfs";
             cachePath = "/rvloader/wii_game_cache.tsv";
             targetNameOrExtension = ".wbfs";
             recursiveScan = true;
             scanningForDirectories = false;
         }
-        GameContainer createGameContainer(time_t lastModified, const std::string& path) override;
+        void createGameContainer(std::vector<GameContainer>& newGames, time_t lastModified, const std::string& path) override;
         void addMetadataToGameContainer(GameContainer& gc) override;
 };
 
 class GamesDatabaseWAD : public GamesDatabase {
     public:
         GamesDatabaseWAD() {
+            dbName = "WAD";
             scanPath = "";
             cachePath = "";
             targetNameOrExtension = ".wad";
             recursiveScan = false;
             scanningForDirectories = false;
         }
-        GameContainer createGameContainer(time_t lastModified, const std::string& path) override;
+        void createGameContainer(std::vector<GameContainer>& newGames, time_t lastModified, const std::string& path) override;
         void addMetadataToGameContainer(GameContainer& gc) override;
 };
 
 class GamesDatabaseVC : public GamesDatabaseWAD {
     public:
         GamesDatabaseVC() {
+            dbName = "VC";
             scanPath = "/vc";
             cachePath = "/rvloader/vc_game_cache.tsv";
             targetNameOrExtension = ".wad";
@@ -192,6 +199,7 @@ class GamesDatabaseVC : public GamesDatabaseWAD {
 class GamesDatabaseChannels : public GamesDatabaseWAD {
     public:
         GamesDatabaseChannels() {
+            dbName = "Channels";
             scanPath = "/channels";
             cachePath = "/rvloader/channels_game_cache.tsv";
             targetNameOrExtension = ".wad";

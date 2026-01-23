@@ -39,7 +39,9 @@ void GuiGamesView::initLUA() {
     //Init LUA
     L = luaL_newstate();
     luaL_openlibs(L);
-
+    
+    lua_pushstring(L, basePath);
+    lua_setfield(L, LUA_REGISTRYINDEX, "basePath");
 
     //Link some members to global LUA variables
     switch (titlesType) {
@@ -633,7 +635,6 @@ int GuiGamesView::lua_getGamesType(lua_State* L) {
 }
 
 int GuiGamesView::lua_bootGame(lua_State* L) {
-    char oldPath[PATH_MAX];
     int argc = lua_gettop(L);
     bool forceReinstall = false;
     if (argc != 1 && argc != 2) {
@@ -714,10 +715,7 @@ int GuiGamesView::lua_bootGame(lua_State* L) {
                 cfg.Config |= HIIDRA_CFG_CHEATS;
 
                 //Read cheats
-                getcwd(oldPath, PATH_MAX);
-                chdir("/");
                 thisView->cheatCodes.parseFile(gc.cheatPath);
-                chdir(oldPath);
 
                 for (auto& cheat : thisView->cheatCodes) {
                     std::string cheatConfName = "Cheat_" + Cheat::getCheatNameHash(cheat.first);
@@ -866,10 +864,7 @@ int GuiGamesView::lua_bootGame(lua_State* L) {
                 cfg.Config |= HIIDRA_CFG_CHEATS;
 
                 //Read cheats
-                getcwd(oldPath, PATH_MAX);
-                chdir("/");
                 thisView->cheatCodes.parseFile(gc.cheatPath);
-                chdir(oldPath);
 
                 for (auto& cheat : thisView->cheatCodes) {
                     std::string cheatConfName = "Cheat_" + Cheat::getCheatNameHash(cheat.first);
@@ -935,10 +930,7 @@ int GuiGamesView::lua_bootGame(lua_State* L) {
                 cfg.Config |= HIIDRA_CFG_CHEATS;
 
                 //Read cheats
-                getcwd(oldPath, PATH_MAX);
-                chdir("/");
                 thisView->cheatCodes.parseFile(gc.cheatPath);
-                chdir(oldPath);
 
                 for (auto& cheat : thisView->cheatCodes) {
                     std::string cheatConfName = "Cheat_" + Cheat::getCheatNameHash(cheat.first);
@@ -1054,11 +1046,7 @@ int GuiGamesView::lua_readGameCheats(lua_State* L) {
     //Open cheat
     try {
         GameContainer& gc = gamesList->at(idx);
-        char oldPath[PATH_MAX];
-        getcwd(oldPath, PATH_MAX);
-        chdir("/");
         thisView->cheatCodes.parseFile(gc.cheatPath);
-        chdir(oldPath);
     } catch (std::out_of_range& e) {
         return luaL_error(L, "Can't find game at index %u", idx);
     }
