@@ -23,10 +23,12 @@ RVLOADERVERSION_NAME	:= ""
 TARGET		:=	$(notdir $(CURDIR))
 BUILD		:=	build
 SOURCES		:=	source source/titles source/gui \
+				source/utils \
 				source/luasupport source/peripherals ../common/source
 DATA		:=	data
 TEXTURES	:=	textures
 INCLUDES	:=	include include/titles include/gui \
+				include/utils \
 				include/peripherals ../common/include
 
 #---------------------------------------------------------------------------------
@@ -37,7 +39,7 @@ CFLAGS	= -g -O2 -Wall $(MACHDEP) $(INCLUDE) -DLUA_32BITS \
 			-DVER_MAJOR=${RVLOADERVERSION_MAJOR} -DVER_MINOR=${RVLOADERVERSION_MINOR} -DVER_NAME=\"${RVLOADERVERSION_NAME}\"
 CXXFLAGS	=	$(CFLAGS) -std=c++20
 
-LDFLAGS	=	-g $(MACHDEP) -Wl,-Map,$(notdir $@).map,--section-start,.init=0x81330000
+LDFLAGS	=	-g $(MACHDEP) -Wl,-Map,$(notdir $@).map,--section-start,.init=0x81330000,-wrap=__thread_dispatch
 
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project
@@ -208,6 +210,12 @@ $(OFILES_SOURCES) : $(HFILES)
 
 #---------------------------------------------------------------------------------
 %.txt.o	:	%.txt
+#---------------------------------------------------------------------------------
+	@echo $(notdir $<)
+	@$(bin2o)
+
+#---------------------------------------------------------------------------------
+%.txt.bz2.o	:	%.txt.bz2
 #---------------------------------------------------------------------------------
 	@echo $(notdir $<)
 	@$(bin2o)
