@@ -24,3 +24,5 @@ readROMPatch/font_western_bin.h
 main/data/dolbooter.bin
 dolbooter/dis.txt
 rvlbooter/main_dol.h
+bootloader/data/dolbooter.bin
+dolbooter/dolbooter.bin
