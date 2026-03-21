@@ -192,14 +192,16 @@ void GamesDatabase::scanGames() {
 void GamesDatabase::startScanAndUpdateThread() {
     readCache();
     scanAndUpdateThreadStack = (u8*)memalign(32, THREAD_STACK_SIZE);
-    ThreadsProfiler::createThreadAndProfile(dbName + " ScanAndUpdateThread", &scanAndUpdateThreadHandle, scanAndUpdateThread, (void*)this, scanAndUpdateThreadStack, THREAD_STACK_SIZE, 30);
+    //ThreadsProfiler::createThreadAndProfile(dbName + " ScanAndUpdateThread", &scanAndUpdateThreadHandle, scanAndUpdateThread, (void*)this, scanAndUpdateThreadStack, THREAD_STACK_SIZE, 30);
+    LWP_CreateThread(&scanAndUpdateThreadHandle, scanAndUpdateThread, (void*)this, scanAndUpdateThreadStack, THREAD_STACK_SIZE, 30);
 }
 
 void* GamesDatabase::scanAndUpdateThread(void* arg) {
     GamesDatabase* db = (GamesDatabase*)arg;
     db->scanGames();
     db->coversThreadStack = (u8*)memalign(32, THREAD_STACK_SIZE);
-    ThreadsProfiler::createThreadAndProfile(db->dbName + " CoversThread", &db->coversThreadHandle, loadCoversThread, (void*)db, db->coversThreadStack, THREAD_STACK_SIZE, 30);
+    //ThreadsProfiler::createThreadAndProfile(db->dbName + " CoversThread", &db->coversThreadHandle, loadCoversThread, (void*)db, db->coversThreadStack, THREAD_STACK_SIZE, 30);
+    LWP_CreateThread(&db->coversThreadHandle, loadCoversThread, (void*)db, db->coversThreadStack, THREAD_STACK_SIZE, 30);
     db->hasFinishedScanning.send();
     return NULL;
 }

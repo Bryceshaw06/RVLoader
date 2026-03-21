@@ -56,6 +56,15 @@ class Animation {
 
         bool animate();
 
+        void clear() {
+            steps.clear();
+            startTime = 0;
+            pauseTime = 0;
+            totDuration = 0;
+            playing = false;
+            output = NULL;
+        }
+
         void pause() {
             pauseTime = gettime() - startTime;
             playing = false;
