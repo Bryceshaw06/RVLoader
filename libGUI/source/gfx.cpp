@@ -160,19 +160,20 @@ namespace Gfx
 
         GX_SetZMode(GX_TRUE, GX_LEQUAL, GX_TRUE);
         GX_SetColorUpdate(GX_TRUE);
-        GX_CopyDisp(frameBuffer[fb],GX_TRUE);
-
+        
         //Do this stuff after drawing
         GX_DrawDone();
+        
+        GX_CopyDisp(frameBuffer[fb],GX_TRUE);
 
         VIDEO_SetNextFramebuffer(frameBuffer[fb]);
-        fb ^= 1; //flip framebuffer
         VIDEO_Flush();
-
+        
         VIDEO_WaitVSync();
         //Interlaced screens require two frames to update
         if (rmode->viTVMode & VI_NON_INTERLACE)
-            VIDEO_WaitVSync();
+        VIDEO_WaitVSync();
+        fb ^= 1; //flip framebuffer
     }
 
     void concatViewMatrix(Mtx mi, Mtx mo) {
