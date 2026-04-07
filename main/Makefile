@@ -39,13 +39,13 @@ CFLAGS	= -g -O2 -Wall $(MACHDEP) $(INCLUDE) -DLUA_32BITS \
 			-DVER_MAJOR=${RVLOADERVERSION_MAJOR} -DVER_MINOR=${RVLOADERVERSION_MINOR} -DVER_NAME=\"${RVLOADERVERSION_NAME}\"
 CXXFLAGS	=	$(CFLAGS) -std=c++20
 
-LDFLAGS	=	-g $(MACHDEP) -Wl,-Map,$(notdir $@).map,--section-start,.init=0x81330000,-wrap=__thread_dispatch
+LDFLAGS	=	-g $(MACHDEP) -Wl,-Map,$(notdir $@).map,--section-start,.init=0x81330000 #,-wrap=__thread_dispatch
 
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project
 #---------------------------------------------------------------------------------
 
-LIBS	:=	-llua -laudiogc -lwiiuse -laesnd -lbte -lfat -lGUI -logc -lm -lfreetype -lpng -lz -lbz2 -lmxml
+LIBS	:=	-llua -laudiogc -lwiiuse -laesnd -lbte -lfat -lGUI -logc -lm -lfreetype -lpng -lz -lbrotlidec -lbrotlicommon -lbz2 -lmxml
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing

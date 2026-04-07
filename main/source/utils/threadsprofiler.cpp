@@ -2,11 +2,11 @@
 #include <malloc.h>
 #include <gccore.h>
 #include <unistd.h>
-#include <ogc/lwp_threads.h>
-#include <ogc/lwp_objmgr.h>
 #include <unordered_map>
 #include <map>
 #include "threadsprofiler.h"
+
+#if 0
 
 extern "C" {
     void __thread_dispatch(void);
@@ -138,3 +138,4 @@ extern "C" {
         ThreadsProfiler::myThreadDispatch();
     }
 }
+#endif
